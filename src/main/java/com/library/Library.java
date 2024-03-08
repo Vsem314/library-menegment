@@ -1,78 +1,141 @@
 package com.library;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
-public class Library {
+public class Library implements AutoCloseable {
     private List<Book> books;
     private Scanner scanner;
+    private static final String DATA_FILE = "library_data.ser";
 
     public Library() {
-        books = new ArrayList<>();
-        scanner = new Scanner(System.in);
+        this.scanner = new Scanner(System.in);
+        loadData();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void loadData() {
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(DATA_FILE))) {
+            books = (List<Book>) ois.readObject();
+        } catch (FileNotFoundException e) {
+            books = new ArrayList<>();
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println("Ошибка загрузки данных: " + e.getMessage());
+            books = new ArrayList<>();
+        }
+    }
+
+    public void saveData() {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(DATA_FILE))) {
+            oos.writeObject(books);
+        } catch (IOException e) {
+            System.err.println("Ошибка сохранения данных: " + e.getMessage());
+        }
     }
 
     public void start() {
-        while (true) {
-            System.out.println("\n--- Управление библиотекой ---");
-            System.out.println("1. Добавить книгу");
-            System.out.println("2. Показать все книги");
-            System.out.println("3. Найти книгу");
-            System.out.println("4. Обновить книгу");
-            System.out.println("5. Удалить книгу");
-            System.out.println("0. Выход");
-            System.out.print("Выберите действие: ");
+        try {
+            while (true) {
+                printMenu();
+                int choice = safeReadInt("Выберите действие", 0, 5);
+                handleUserChoice(choice);
+            }
+        } finally {
+            saveData();
+        }
+    }
 
-            int choice = scanner.nextInt();
-            scanner.nextLine();
+    private void printMenu() {
+        System.out.println("\n--- Управление библиотекой ---");
+        System.out.println("1. Добавить книгу");
+        System.out.println("2. Показать все книги");
+        System.out.println("3. Найти книгу");
+        System.out.println("4. Обновить книгу");
+        System.out.println("5. Удалить книгу");
+        System.out.println("0. Выход");
+        System.out.print("Выберите действие: ");
+    }
 
-            switch (choice) {
-                case 1:
-                    addBook();
-                    break;
-                case 2:
-                    showAllBooks();
-                    break;
-                case 3:
-                    findBook();
-                    break;
-                case 4:
-                    updateBook();
-                    break;
-                case 5:
-                    deleteBook();
-                    break;
-                case 0:
-                    System.out.println("Выход из программы...");
-                    return;
-                default:
-                    System.out.println("Неверный выбор, попробуйте еще раз.");
+    private void handleUserChoice(int choice) {
+        switch (choice) {
+            case 1 -> addBook();
+            case 2 -> showAllBooks();
+            case 3 -> findBook();
+            case 4 -> updateBook();
+            case 5 -> deleteBook();
+            case 0 -> {
+                System.out.println("Выход из программы...");
+                System.exit(0);
             }
         }
     }
 
     private void addBook() {
         System.out.println("\n--- Добавление новой книги ---");
-        System.out.print("Введите ID книги: ");
-        String id = scanner.nextLine();
 
-        System.out.print("Введите название книги: ");
-        String title = scanner.nextLine();
+        String id = readNonEmptyInput("Введите ID книги: ");
+        if (isBookIdExists(id)) {
+            System.out.println("Книга с таким ID уже существует!");
+            return;
+        }
 
-        System.out.print("Введите автора книги: ");
-        String author = scanner.nextLine();
-
-        System.out.print("Введите год издания: ");
-        int year = scanner.nextInt();
-
-        System.out.println("Введите стоимость книги: ");
-        int price = scanner.nextInt();
-
+        String title = readNonEmptyInput("Введите название книги: ");
+        String author = readNonEmptyInput("Введите автора книги: ");
+        int year = safeReadInt("Введите год издания: ", 1450, java.time.Year.now().getValue());
+        double price = safeReadDouble("Введите стоимость книги: ", 0, Double.MAX_VALUE);
 
         Book book = new Book(id, title, author, year, price);
         books.add(book);
         System.out.println("Книга успешно добавлена!");
+    }
+
+    private boolean isBookIdExists(String id) {
+        return books.stream().anyMatch(b -> b.getId().equalsIgnoreCase(id));
+    }
+
+    private String readNonEmptyInput(String prompt) {
+        String input;
+        do {
+            System.out.print(prompt);
+            input = scanner.nextLine().trim();
+            if (input.isEmpty()) {
+                System.out.println("Поле не может быть пустым!");
+            }
+        } while (input.isEmpty());
+        return input;
+    }
+
+    private int safeReadInt(String prompt, int min, int max) {
+        while (true) {
+            try {
+                System.out.print(prompt);
+                int value = Integer.parseInt(scanner.nextLine());
+                if (value >= min && value <= max) {
+                    return value;
+                }
+                System.out.printf("Введите число от %d до %d!%n", min, max);
+            } catch (NumberFormatException e) {
+                System.out.println("Некорректный ввод. Введите целое число!");
+            }
+        }
+    }
+
+    private double safeReadDouble(String prompt, double min, double max) {
+        while (true) {
+            try {
+                System.out.print(prompt);
+                double value = Double.parseDouble(scanner.nextLine());
+                if (value >= min && value <= max) {
+                    return value;
+                }
+                System.out.printf("Введите число от %.2f до %.2f!%n", min, max);
+            } catch (NumberFormatException e) {
+                System.out.println("Некорректный ввод. Введите число!");
+            }
+        }
     }
 
     private void showAllBooks() {
@@ -80,48 +143,37 @@ public class Library {
         if (books.isEmpty()) {
             System.out.println("В библиотеке нет книг.");
         } else {
-            for (Book book : books) {
-                System.out.println(book);
-            }
+            books.forEach(System.out::println);
         }
     }
 
     private void findBook() {
         System.out.println("\n--- Поиск книги ---");
         System.out.print("Введите ID, название или автора книги: ");
-        String searchTerm = scanner.nextLine().toLowerCase();
+        String searchTerm = scanner.nextLine().trim().toLowerCase();
 
-        List<Book> foundBooks = new ArrayList<>();
-        for (Book book : books) {
-            if (book.getId().toLowerCase().contains(searchTerm) ||
-                    book.getTitle().toLowerCase().contains(searchTerm) ||
-                    book.getAuthor().toLowerCase().contains(searchTerm)) {
-                foundBooks.add(book);
-            }
-        }
+        List<Book> foundBooks = books.stream()
+                .filter(b -> b.getId().toLowerCase().contains(searchTerm) ||
+                        b.getTitle().toLowerCase().contains(searchTerm) ||
+                        b.getAuthor().toLowerCase().contains(searchTerm))
+                .collect(Collectors.toList());
 
         if (foundBooks.isEmpty()) {
             System.out.println("Книги не найдены.");
         } else {
             System.out.println("Найденные книги:");
-            for (Book book : foundBooks) {
-                System.out.println(book);
-            }
+            foundBooks.forEach(System.out::println);
         }
     }
 
     private void updateBook() {
         System.out.println("\n--- Обновление книги ---");
-        System.out.print("Введите ID книги для обновления: ");
-        String id = scanner.nextLine();
+        String id = readNonEmptyInput("Введите ID книги для обновления: ");
 
-        Book bookToUpdate = null;
-        for (Book book : books) {
-            if (book.getId().equals(id)) {
-                bookToUpdate = book;
-                break;
-            }
-        }
+        Book bookToUpdate = books.stream()
+                .filter(b -> b.getId().equalsIgnoreCase(id))
+                .findFirst()
+                .orElse(null);
 
         if (bookToUpdate == null) {
             System.out.println("Книга с ID " + id + " не найдена.");
@@ -143,11 +195,14 @@ public class Library {
             bookToUpdate.setAuthor(newAuthor);
         }
 
-        System.out.print("Введите новый год издания (оставьте 0, чтобы не менять): ");
-        int newYear = scanner.nextInt();
-        scanner.nextLine(); // очистка буфера
+        int newYear = safeReadInt("Введите новый год издания (0 - не изменять): ", 0, Integer.MAX_VALUE);
         if (newYear != 0) {
             bookToUpdate.setYear(newYear);
+        }
+
+        double newPrice = safeReadDouble("Введите новую стоимость (0 - не изменять): ", 0, Double.MAX_VALUE);
+        if (newPrice != 0) {
+            bookToUpdate.setPrice((int) newPrice);
         }
 
         System.out.println("Книга успешно обновлена!");
@@ -155,23 +210,22 @@ public class Library {
 
     private void deleteBook() {
         System.out.println("\n--- Удаление книги ---");
-        System.out.print("Введите ID книги для удаления: ");
-        String id = scanner.nextLine();
+        String id = readNonEmptyInput("Введите ID книги для удаления: ");
 
-        Book bookToRemove = null;
-        for (Book book : books) {
-            if (book.getId().equals(id)) {
-                bookToRemove = book;
-                break;
-            }
-        }
+        boolean removed = books.removeIf(b -> b.getId().equalsIgnoreCase(id));
 
-        if (bookToRemove == null) {
+        if (removed) {
+            System.out.println("Книга успешно удалена!");
+        } else {
             System.out.println("Книга с ID " + id + " не найдена.");
-            return;
         }
+    }
 
-        books.remove(bookToRemove);
-        System.out.println("Книга успешно удалена!");
+    @Override
+    public void close() {
+        if (scanner != null) {
+            scanner.close();
+        }
+        saveData();
     }
 }
