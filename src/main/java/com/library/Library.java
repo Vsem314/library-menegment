@@ -1,6 +1,7 @@
 package com.library;
 
 import java.io.*;
+import java.time.Year;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -74,22 +75,46 @@ public class Library implements AutoCloseable {
     }
 
     private void addBook() {
+    }
+
+    public void addBook(String id, String title, String author, int year, double price) {
+        if (id == null || id.trim().isEmpty()) {
+            throw new IllegalArgumentException("ID книги не может быть пустым");
+        }
+        if (isBookIdExists(id)) {
+            throw new IllegalArgumentException("Книга с ID '" + id + "' уже существует");
+        }
+        if (title == null || title.trim().isEmpty()) {
+            throw new IllegalArgumentException("Название книги не может быть пустым");
+        }
+        if (author == null || author.trim().isEmpty()) {
+            throw new IllegalArgumentException("Автор не может быть пустым");
+        }
+        if (year < 1450 || year > Year.now().getValue() + 5) {
+            throw new IllegalArgumentException("Некорректный год издания");
+        }
+        if (price < 0) {
+            throw new IllegalArgumentException("Цена не может быть отрицательной");
+        }
+
+        Book book = new Book(id, title.trim(), author.trim(), year, price);
+        books.add(book);
+    }
+    public void addBookViaConsole() {
         System.out.println("\n--- Добавление новой книги ---");
 
         String id = readNonEmptyInput("Введите ID книги: ");
-        if (isBookIdExists(id)) {
-            System.out.println("Книга с таким ID уже существует!");
-            return;
-        }
-
         String title = readNonEmptyInput("Введите название книги: ");
         String author = readNonEmptyInput("Введите автора книги: ");
-        int year = safeReadInt("Введите год издания: ", 1450, java.time.Year.now().getValue());
+        int year = safeReadInt("Введите год издания: ", 1450, Year.now().getValue());
         double price = safeReadDouble("Введите стоимость книги: ", 0, Double.MAX_VALUE);
 
-        Book book = new Book(id, title, author, year, price);
-        books.add(book);
-        System.out.println("Книга успешно добавлена!");
+        try {
+            addBook(id, title, author, year, price);
+            System.out.println("Книга успешно добавлена!");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Ошибка: " + e.getMessage());
+        }
     }
 
     private boolean isBookIdExists(String id) {
@@ -227,5 +252,8 @@ public class Library implements AutoCloseable {
             scanner.close();
         }
         saveData();
+    }
+
+    public void addBook(String text, String text1) {
     }
 }
