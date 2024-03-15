@@ -1,20 +1,20 @@
 package com.library;
 
+import com.library.ui.BaseLibraryUI;
+import com.library.ui.UIFactory;
+import com.library.ui.UIFactory.UIType;
 import java.io.IOException;
 
 public class Main {
     public static void main(String[] args) {
-        Library library = new Library();
-
         try {
-            // Графический интерфейс
-            LibraryUI.start(library);
-        } catch (IOException e) {
-            // Если Lanterna не работает, используем консольный интерфейс
-            System.err.println("Ошибка графического интерфейса: " + e.getMessage());
-            new ConsoleLibrary(library).start();
+            Library library = new Library();
+            BaseLibraryUI ui = UIFactory.createUI(UIType.LANTERNA, library);
+            ui.start();
+        } catch (Exception e) {
+            System.err.println("Critical error: " + e.getMessage());
+            e.printStackTrace();
+            System.exit(1);
         }
-
-        library.saveData();
     }
 }

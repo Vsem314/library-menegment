@@ -1,97 +1,116 @@
 package com.library;
 
-import java.util.regex.Pattern;
+import java.io.Serializable;
+import java.time.Year;
+import java.util.Objects;
 
-public class Book {
-    // Добавляем статусы книги
-    public enum Status { AVAILABLE, BORROWED, UNDER_REPAIR }
-
+public class Book implements Serializable {
+    private static final long serialVersionUID = 1L;
     private String id;
     private String title;
     private String author;
     private int year;
     private double price;
-    private String category;
-    private Status status;
+    private String genre;
+    private boolean available;
 
-
-
-    public Book(String id, String title, String author, int year, double price) {
-        if (!Pattern.matches("^[A-Za-z0-9]{3,10}$", id)) {
-            throw new IllegalArgumentException("ID должен содержать 3-10 букв/цифр");
-        }
-        if (year < 1450 || year > java.time.Year.now().getValue()) {
-            throw new IllegalArgumentException("Некорректный год издания");
-        }
-        this.id = id;
-        this.title = title;
-        this.author = author;
-        this.year = year;
-        this.price = price;
-        this.category = category;
-        this.status = Status.AVAILABLE;
+    public Book(String id, String title, String author, int year, double price, String genre) {
+        setId(id);
+        setTitle(title);
+        setAuthor(author);
+        setYear(year);
+        setPrice(price);
+        setGenre(genre);
+        this.available = true;
     }
 
-    // Геттеры и сеттеры
-
-
-    public String getCategory() {
-        return category;
-    }
-
-    public void setCategory(String category) {
-        this.category = category;
-    }
-
-    public Status getStatus() {
-        return status;
-    }
-
-    public void setStatus(Status status) {
-        this.status = status;
-    }
-
-    public String getId() {
-        return id;
-    }
+    // Getters and setters with validation
+    public String getId() { return id; }
+    public String getTitle() { return title; }
+    public String getAuthor() { return author; }
+    public int getYear() { return year; }
+    public double getPrice() { return price; }
+    public String getGenre() { return genre; }
+    public boolean isAvailable() { return available; }
 
     public void setId(String id) {
+        if (id == null || id.trim().isEmpty()) {
+            throw new IllegalArgumentException("Book ID cannot be empty");
+        }
+        if (!id.matches("^[A-Za-z0-9-]{3,20}$")) {
+            throw new IllegalArgumentException("ID must be 3-20 characters (letters, digits, hyphens)");
+        }
         this.id = id;
-    }
-
-    public String getTitle() {
-        return title;
     }
 
     public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getAuthor() {
-        return author;
+        if (title == null || title.trim().isEmpty()) {
+            throw new IllegalArgumentException("Title cannot be empty");
+        }
+        if (title.length() > 100) {
+            throw new IllegalArgumentException("Title too long (max 100 characters)");
+        }
+        this.title = title.trim();
     }
 
     public void setAuthor(String author) {
-        this.author = author;
-    }
-
-    public int getYear() {
-        return year;
+        if (author == null || author.trim().isEmpty()) {
+            throw new IllegalArgumentException("Author cannot be empty");
+        }
+        if (author.length() > 50) {
+            throw new IllegalArgumentException("Author name too long (max 50 characters)");
+        }
+        this.author = author.trim();
     }
 
     public void setYear(int year) {
+        int currentYear = Year.now().getValue();
+        if (year < 1450 || year > currentYear + 1) {
+            throw new IllegalArgumentException("Year must be between 1450 and " + (currentYear + 1));
+        }
         this.year = year;
-    }
-    public double getPrice() {
-        return price;
     }
 
     public void setPrice(double price) {
-        this.price = price;
+        if (price < 0) {
+            throw new IllegalArgumentException("Price cannot be negative");
+        }
+        if (price > 1_000_000) {
+            throw new IllegalArgumentException("Price too high (max 1,000,000)");
+        }
+        this.price = Math.round(price * 100) / 100.0;
+    }
+
+    public void setGenre(String genre) {
+        if (genre == null || genre.trim().isEmpty()) {
+            throw new IllegalArgumentException("Genre cannot be empty");
+        }
+        if (genre.length() > 30) {
+            throw new IllegalArgumentException("Genre too long (max 30 characters)");
+        }
+        this.genre = genre.trim();
+    }
+
+    public void setAvailable(boolean available) {
+        this.available = available;
     }
 
     @Override
     public String toString() {
-        return "ID: " + id + ", Название: " + title + ", Автор: " + author + ", Год: " + year + ", Цена: " + price;
+        return String.format("%s - %s (%d) | Genre: %s | Price: %.2f | %s",
+                title, author, year, genre, price, available ? "Available" : "Checked out");
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Book book = (Book) o;
+        return id.equals(book.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }
