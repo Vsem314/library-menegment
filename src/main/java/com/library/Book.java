@@ -5,12 +5,15 @@ public class Book {
     private String title;
     private String author;
     private int year;
+    private int price;
 
-    public Book(String id, String title, String author, int year) {
+
+    public Book(String id, String title, String author, int year, int price) {
         this.id = id;
         this.title = title;
         this.author = author;
         this.year = year;
+        this.price = price;
     }
 
     // Геттеры и сеттеры
@@ -45,9 +48,16 @@ public class Book {
     public void setYear(int year) {
         this.year = year;
     }
+    public int getPrice() {
+        return price;
+    }
+
+    public void setPrice(int price) {
+        this.price = price;
+    }
 
     @Override
     public String toString() {
-        return "ID: " + id + ", Название: " + title + ", Автор: " + author + ", Год: " + year;
+        return "ID: " + id + ", Название: " + title + ", Автор: " + author + ", Год: " + year + "Цена" + price;
     }
 }

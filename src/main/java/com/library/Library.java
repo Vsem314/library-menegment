@@ -25,7 +25,7 @@ public class Library {
             System.out.print("Выберите действие: ");
 
             int choice = scanner.nextInt();
-            scanner.nextLine(); // очистка буфера
+            scanner.nextLine();
 
             switch (choice) {
                 case 1:
@@ -65,6 +65,9 @@ public class Library {
 
         System.out.print("Введите год издания: ");
         int year = scanner.nextInt();
+
+        System.out.println("Введите стоимость книги");
+        int price = scanner.nextInt();
         scanner.nextLine(); // очистка буфера
 
         Book book = new Book(id, title, author, year);
