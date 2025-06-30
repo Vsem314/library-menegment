@@ -58,6 +58,6 @@ public class Book {
 
     @Override
     public String toString() {
-        return "ID: " + id + ", Название: " + title + ", Автор: " + author + ", Год: " + year + "Цена" + price;
+        return "ID: " + id + ", Название: " + title + ", Автор: " + author + ", Год: " + year + ", Цена: " + price;
     }
 }

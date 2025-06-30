@@ -66,11 +66,11 @@ public class Library {
         System.out.print("Введите год издания: ");
         int year = scanner.nextInt();
 
-        System.out.println("Введите стоимость книги");
+        System.out.println("Введите стоимость книги: ");
         int price = scanner.nextInt();
-        scanner.nextLine(); // очистка буфера
 
-        Book book = new Book(id, title, author, year);
+
+        Book book = new Book(id, title, author, year, price);
         books.add(book);
         System.out.println("Книга успешно добавлена!");
     }
